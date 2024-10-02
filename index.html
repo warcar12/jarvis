@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -377,7 +378,22 @@ startButton.addEventListener('click', () => {
                 const websiteName = command.substring(5);
                 response = `Opening ${websiteName}.`;
             window.open(`https://${websiteName}.com`, "_blank");
-            } else if (command.includes("weather")) {
+            } else if (command.includes("start recording")) {
+        startRecording();
+        response = "Starting video recording.";
+    } else if (command.includes("stop recording")) {
+        stopRecording();
+        response = "Stopping and saving video recording.";
+    } else if (command.includes("capture image")) {
+        captureImage();
+        response = "Capturing and saving image.";
+    } else if (command.includes("turn on camera")) {
+        response = "Turning on the camera.";
+        startCamera();
+    } else if (command.includes("turn off camera")) {
+        response = "Turning off the camera.";
+        stopCamera();
+    } else if (command.includes("weather")) {
                 response = "Opening the weather page on Google.";
                 window.open("https://www.google.com/search?q=weather", "_blank");
             } else if (command.includes("joke")) {
@@ -474,6 +490,95 @@ recognition.onresult = (event) => {
         respondToCommand(command); // Respond to commands only if Jarvis is awake
     }
 };
+
+let mediaRecorder;
+let recordedChunks = [];
+let videoStream;
+let isRecording = false;
+
+function startCamera() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then((stream) => {
+                videoElement.style.display = "block";
+                videoElement.srcObject = stream;
+                videoStream = stream; // Save the video stream for recording
+            })
+            .catch((err) => {
+                console.error("Camera access error: ", err);
+            });
+    } else {
+        alert("Camera not supported by this browser.");
+    }
+}
+
+function stopCamera() {
+    const stream = videoElement.srcObject;
+    if (stream) {
+        const tracks = stream.getTracks();
+        tracks.forEach(track => track.stop());
+        videoElement.style.display = "none";
+    }
+}
+
+function startRecording() {
+    if (videoStream) {
+        mediaRecorder = new MediaRecorder(videoStream);
+        recordedChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+                recordedChunks.push(event.data);
+            }
+        };
+
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(recordedChunks, { type: "video/webm" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.style.display = "none";
+            a.href = url;
+            a.download = "recorded_video.webm"; // Default file name for download
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        speak("Recording started.");
+    } else {
+        speak("Camera is not on.");
+    }
+}
+
+function stopRecording() {
+    if (isRecording && mediaRecorder) {
+        mediaRecorder.stop();
+        isRecording = false;
+        speak("Recording stopped and saved.");
+    } else {
+        speak("No recording is active.");
+    }
+}
+
+function captureImage() {
+    const canvas = document.createElement("canvas");
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+    
+    const imageUrl = canvas.toDataURL("image/png");
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = imageUrl;
+    a.download = "captured_image.png"; // Default file name for download
+    document.body.appendChild(a);
+    a.click();
+    
+    speak("Image captured and saved.");
+}
 
     </script>
 </body>
