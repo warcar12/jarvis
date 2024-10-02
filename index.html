@@ -330,9 +330,9 @@ startButton.addEventListener('click', () => {
             const synth = window.speechSynthesis;
             let response = "";
 
-           if (command.startsWith("jarvis say")) {
+           if (command.startsWith(" say")) {
         // Extract the text after "Jarvis say"
-        const textToSay = command.replace("jarvis say", "").trim();
+        const textToSay = command.replace(" say", "").trim();
         if (textToSay) {
             response = textToSay; // Make Jarvis say the extracted text
         } else {
@@ -387,7 +387,7 @@ startButton.addEventListener('click', () => {
                 window.open("https://www.youtube.com/c/NoCopyrightSounds", "_blank");
             } else if (command.includes("fact")) {
                 response = getRandomElement(facts);
-            } else if (command.includes("fact channel")) {
+            } else if (command.includes("best channel")) {
                 response = "Opening Flash Fact Zone";
                 window.open("https://www.youtube.com/@Flash_Fact_Zone", "_blank");
             }else if (command.includes("turn on camera")) {
