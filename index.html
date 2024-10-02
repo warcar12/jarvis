@@ -75,6 +75,17 @@
         let isListening = false;
         let lastResponse = "";
         let expectingTimerInput = false; // Flag for timer input
+startButton.addEventListener('click', () => {
+    if (!isListening) {
+        recognition.start();
+        outputDiv.innerHTML = "<p>Listening for 'Jarvis'...</p>";
+        startButton.textContent = "Stop Listening"; // Change button text
+    } else {
+        recognition.stop();
+        outputDiv.innerHTML = "<p>Stopped Listening.</p>";
+        startButton.textContent = "Start Listening"; // Reset button text
+    }
+});
 
         // Arrays for jokes and facts
          const jokes = [
@@ -172,7 +183,7 @@
             "Why can’t you hear a pterodactyl go to the bathroom? Because the ‘P’ is silent!"
         ];
 
-        const interestingFacts = [
+        const facts = [
             "Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3000 years old and still edible.",
             "Bananas are berries, but strawberries aren’t.",
             "A group of flamingos is called a 'flamboyance.'",
@@ -380,11 +391,12 @@
                 return;
             }
 
-            if (response && response !== lastResponse) {
-                lastResponse = response;
-                responseDiv.innerHTML = `<p>Jarvis: ${response}</p>`;
-                speak(response); // Use the updated speak function
-            }
+            if (response) {
+        responseDiv.innerHTML = `<p>Jarvis: ${response}</p>`;
+        speak(response);
+        isAwake = false; // Reset after responding
+        recognition.start(); // Restart listening for "Jarvis"
+    }
         }
 
         function setTimer(minutes) {
@@ -436,6 +448,22 @@
                 videoElement.style.display = "none";
             }
         }
+        let isAwake = false; // To track if Jarvis is ready for commands
+
+recognition.onresult = (event) => {
+    const command = event.results[0][0].transcript.toLowerCase();
+    outputDiv.innerHTML = `<p>You said: ${command}</p>`;
+    
+    if (command.includes("jarvis")) {
+        isAwake = true; // Jarvis is now awake and ready for commands
+        outputDiv.innerHTML += "<p>Jarvis is ready. What can I help you with?</p>";
+        recognition.stop(); // Stop listening for "Jarvis"
+        recognition.start(); // Start listening for the command
+    } else if (isAwake) {
+        respondToCommand(command); // Respond to commands only if Jarvis is awake
+    }
+};
+
     </script>
 </body>
 </html>
