@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Jarvis</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            color: #333;
+            text-align: center;
+            padding: 50px;
+        }
+
+        .container {
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        #output {
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        #response {
+            margin-top: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simple Jarvis</h1>
+        <button id="startRecognition">Start Listening</button>
+        <div id="output"></div>
+        <div id="response"></div>
+    </div>
+    <script>
+        const startButton = document.getElementById('startRecognition');
+        const outputDiv = document.getElementById('output');
+        const responseDiv = document.getElementById('response');
+
+        // Initialize Speech Recognition
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.interimResults = true; // Enable interim results
+        let isListening = false; // Track listening state
+        let lastResponse = ""; // Track last response to prevent repetition
+        let speaking = false; // Track if Jarvis is currently speaking
+
+        // Arrays for unique jokes and interesting facts
+        const jokes = [
+            "Why did the bicycle fall over? Because it was two-tired!",
+            "Why don’t skeletons fight each other? They don’t have the guts.",
+            "What do you call cheese that isn't yours? Nacho cheese!",
+            "Why did the coffee file a police report? It got mugged!",
+            "What do you call a fish wearing a bowtie? Sofishticated.",
+            "Why was the math book sad? Because it had too many problems.",
+            "Why don’t scientists trust atoms? Because they make up everything!",
+            "What do you get when you cross a snowman and a vampire? Frostbite!",
+            "How does a penguin build its house? Igloos it together!",
+            "What do you call fake spaghetti? An impasta!",
+            "Why did the scarecrow win an award? Because he was outstanding in his field!",
+            "What did one wall say to the other wall? 'I'll meet you at the corner.'",
+            "Why don’t some couples go to the gym? Because some relationships don’t work out.",
+            "Why was the computer cold? It left its Windows open!",
+            "What do you call a bear with no teeth? A gummy bear!",
+            "Why did the student eat his homework? Because his teacher told him it was a piece of cake!",
+            "Why can’t you give Elsa a balloon? Because she will let it go!",
+            "Why did the golfer bring two pairs of pants? In case he got a hole in one!",
+            "Why did the music teacher go to jail? Because she got caught with too many sharp notes!",
+            "What did the janitor say when he jumped out of the closet? 'Supplies!'",
+            "Why did the cookie go to the hospital? Because it felt crummy!",
+            "Why did the picture go to jail? Because it was framed!",
+            "Why did the computer cross the road? To get to the other side!",
+            "Why did the stadium get hot after the game? All of the fans left!",
+            "Why don’t oysters donate to charity? Because they are shellfish!",
+            "What did the zero say to the eight? Nice belt!",
+            "What do you call a factory that makes good products? A satisfactory!",
+            "What did the grape do when it got stepped on? Nothing, it just let out a little wine!",
+            "Why do seagulls fly over the ocean? Because if they flew over the bay, they’d be bagels!",
+            "Why did the golfer bring an extra pair of socks? In case he got a hole in one!",
+            "Why was the broom late? It swept in!",
+            "Why do cows have hooves instead of feet? Because they lactose!",
+            "Why did the banana go to the doctor? Because it wasn’t peeling well!",
+            "What do you call a can opener that doesn’t work? A can’t opener!",
+            "Why are ghosts bad liars? Because you can see right through them!",
+            "What do you call a dog that can do magic? A labracadabrador!",
+            "Why did the chicken join a band? Because it had the drumsticks!",
+            "Why did the coffee file a police report? It got mugged!",
+            "Why did the student bring a ladder to school? Because he wanted to go to high school!",
+            "What did the janitor say when he jumped out of the closet? 'Supplies!'",
+            "Why did the orange stop? It ran out of juice!",
+            "Why can’t you hear a pterodactyl go to the bathroom? Because the ‘P’ is silent!",
+            "Why don’t skeletons fight each other? They don’t have the guts.",
+            "What did the fish say when it hit the wall? Dam!",
+            "Why don’t scientists trust atoms? Because they make up everything!",
+            "What do you call a fake noodle? An impasta!",
+            "Why was the math book sad? Because it had too many problems.",
+            "What do you get when you cross a snowman with a vampire? Frostbite!",
+            "How does a penguin build its house? Igloos it together!",
+            "What do you call cheese that isn't yours? Nacho cheese!",
+            "Why did the bicycle fall over? Because it was two-tired!",
+            "Why don’t skeletons fight each other? They don’t have the guts.",
+            "What do you call cheese that isn't yours? Nacho cheese!",
+            "Why did the coffee file a police report? It got mugged!",
+            "What do you call a fish wearing a bowtie? Sofishticated.",
+            "Why was the math book sad? Because it had too many problems.",
+            "Why don’t scientists trust atoms? Because they make up everything!",
+            "What do you get when you cross a snowman and a vampire? Frostbite!",
+            "How does a penguin build its house? Igloos it together!",
+            "What do you call fake spaghetti? An impasta!",
+            "Why did the scarecrow win an award? Because he was outstanding in his field!",
+            "What did one wall say to the other wall? 'I'll meet you at the corner.'",
+            "Why don’t some couples go to the gym? Because some relationships don’t work out.",
+            "Why was the computer cold? It left its Windows open!",
+            "What do you call a bear with no teeth? A gummy bear!",
+            "Why did the student eat his homework? Because his teacher told him it was a piece of cake!",
+            "Why can’t you give Elsa a balloon? Because she will let it go!",
+            "Why did the golfer bring two pairs of pants? In case he got a hole in one!",
+            "Why did the music teacher go to jail? Because she got caught with too many sharp notes!",
+            "What did the janitor say when he jumped out of the closet? 'Supplies!'",
+            "Why did the cookie go to the hospital? Because it felt crummy!",
+            "Why did the picture go to jail? Because it was framed!",
+            "Why did the computer cross the road? To get to the other side!",
+            "Why did the stadium get hot after the game? All of the fans left!",
+            "Why don’t oysters donate to charity? Because they are shellfish!",
+            "What did the zero say to the eight? Nice belt!",
+            "What do you call a factory that makes good products? A satisfactory!",
+            "What did the grape do when it got stepped on? Nothing, it just let out a little wine!",
+            "Why do seagulls fly over the ocean? Because if they flew over the bay, they’d be bagels!",
+            "Why did the golfer bring an extra pair of socks? In case he got a hole in one!",
+            "Why was the broom late? It swept in!",
+            "Why do cows have hooves instead of feet? Because they lactose!",
+            "Why did the banana go to the doctor? Because it wasn’t peeling well!",
+            "What do you call a can opener that doesn’t work? A can’t opener!",
+            "Why are ghosts bad liars? Because you can see right through them!",
+            "What do you call a dog that can do magic? A labracadabrador!",
+            "Why did the chicken join a band? Because it had the drumsticks!",
+            "Why did the coffee file a police report? It got mugged!",
+            "Why did the student bring a ladder to school? Because he wanted to go to high school!",
+            "What did the janitor say when he jumped out of the closet? 'Supplies!'",
+            "Why did the orange stop? It ran out of juice!",
+            "Why can’t you hear a pterodactyl go to the bathroom? Because the ‘P’ is silent!"
+        ];
+
+        const interestingFacts = [
+            "Honey never spoils. Archaeologists have found pots of honey in ancient Egyptian tombs that are over 3000 years old and still edible.",
+            "Bananas are berries, but strawberries aren’t.",
+            "A group of flamingos is called a 'flamboyance.'",
+            "Wombat poop is cube-shaped.",
+            "Octopuses have three hearts.",
+            "There are more stars in the universe than grains of sand on all the beaches on Earth.",
+            "A day on Venus is longer than a year on Venus.",
+            "A bolt of lightning contains enough energy to toast 100,000 slices of bread.",
+            "The unicorn is the national animal of Scotland.",
+            "Humans and giraffes have the same number of neck vertebrae.",
+            "A shrimp's heart is located in its head.",
+            "Some cats are allergic to humans.",
+            "The longest wedding veil was longer than 63 football fields.",
+            "A jiffy is an actual unit of time: 1/100th of a second.",
+            "The average person will spend six months of their life waiting for red lights to turn green.",
+            "Cows have best friends and become stressed when separated from them.",
+            "The world's oldest known 'your mom' joke is 3,500 years old.",
+            "A group of crows is called a 'murder.'",
+            "In Switzerland, it's illegal to own just one guinea pig because they are social animals.",
+            "Tigers have striped skin, not just striped fur.",
+            "The shortest war in history lasted just 38 to 45 minutes, between Britain and Zanzibar on August 27, 1896.",
+            "There are more trees on Earth than stars in the Milky Way.",
+            "A bolt of lightning is five times hotter than the surface of the sun.",
+            "Koalas have fingerprints that are almost identical to human fingerprints.",
+            "The Eiffel Tower can be 15 cm taller during the summer.",
+            "A single strand of spaghetti is called a 'spaghetto.'",
+            "A group of owls is called a 'parliament.'",
+            "The total weight of all ants on Earth is greater than the weight of all humans.",
+            "A crocodile cannot stick its tongue out.",
+            "There are 293 ways to make change for a dollar.",
+            "The shortest commercial flight in the world lasts just 57 seconds.",
+            "Sloths can hold their breath longer than dolphins can.",
+            "The inventor of the frisbee was turned into a frisbee after he died.",
+            "Polar bears have black skin under their white fur.",
+            "Scotland's national animal is the unicorn.",
+            "The world's largest snowflake on record was 15 inches wide.",
+            "A duck's quack doesn't echo, and nobody knows why.",
+            "Sharks are the only fish that can blink with both eyes.",
+            "The average person walks the equivalent of three times around the world in a lifetime.",
+            "The sentence 'The quick brown fox jumps over the lazy dog' uses every letter of the alphabet.",
+            "A snail can sleep for three years.",
+            "Pigs are incapable of looking up at the sky.",
+            "Butterflies taste with their feet.",
+            "The world's smallest reptile was discovered in 2021 and is smaller than a pea.",
+            "Peanuts aren't nuts; they're legumes.",
+            "More people are allergic to cow's milk than any other food.",
+            "The heart of a shrimp is located in its head.",
+            "The average person produces enough saliva in a lifetime to fill two swimming pools.",
+            "Elephants are the only animals that can't jump.",
+            "Some fish can cough.",
+            "A newborn kangaroo is the size of a lima bean.",
+            "The placement of a donkey's eyes in its head enables it to see all four feet at once.",
+            "Kangaroos can't walk backwards.",
+            "The fingerprints of a koala are so similar to humans' that they can taint crime scenes.",
+            "The longest time between two twins being born is 87 days.",
+            "A jellyfish is 95% water.",
+            "An octopus has three hearts.",
+            "A lion's roar can be heard from five miles away.",
+            "A chameleon's tongue is twice the length of its body.",
+            "Dolphins sleep with one eye open.",
+            "In Switzerland, it is illegal to own just one guinea pig because they are social animals.",
+            "The longest wedding veil was longer than 63 football fields.",
+            "The world's largest desert is actually Antarctica.",
+            "The first computer virus was created in 1983.",
+            "More than 1,000 birds die from smashing into windows each year.",
+            "A cloud can weigh more than a million pounds.",
+            "Cheetahs can't roar like lions; instead, they make a sound similar to a house cat.",
+            "A group of frogs is called an army.",
+            "A bolt of lightning contains enough energy to toast 100,000 slices of bread.",
+            "The lifespan of a taste bud is about 10 to 14 days.",
+            "The average person will spend six months of their life waiting for red lights to turn green.",
+            "A single strand of spaghetti is called a 'spaghetto.'",
+            "A group of flamingos is called a 'flamboyance.'",
+            "Sharks are the only fish that can blink with both eyes.",
+            "The world's largest snowflake on record was 15 inches wide.",
+            "An octopus has three hearts.",
+            "A duck's quack doesn't echo, and nobody knows why.",
+            "Wombat poop is cube-shaped.",
+            "In 1923, a horse named 'Alderman' became the first animal to receive a star on the Hollywood Walk of Fame.",
+            "Cows have best friends and become stressed when separated from them.",
+            "The total weight of all ants on Earth is greater than the weight of all humans.",
+            "The world's oldest known 'your mom' joke is 3,500 years old.",
+            "A group of crows is called a 'murder.'",
+            "Kangaroos can't walk backwards.",
+            "Butterflies taste with their feet.",
+            "Pigs are unable to look up at the sky.",
+            "The unicorn is the national animal of Scotland.",
+            "The inventor of the frisbee was turned into a frisbee after he died.",
+            "A bolt of lightning is five times hotter than the surface of the sun.",
+            "Octopuses have three hearts.",
+            "The average person will walk the equivalent of three times around the world in a lifetime.",
+            "The shortest war in history lasted just 38 to 45 minutes.",
+            "There are more trees on Earth than stars in the Milky Way.",
+            "The Eiffel Tower can be 15 cm taller during the summer.",
+            "A crocodile cannot stick its tongue out.",
+            "Scotland's national animal is the unicorn.",
+            "The fingerprints of a koala are so similar to humans' that they can taint crime scenes.",
+            "In Switzerland, it is illegal to own just one guinea pig because they are social animals.",
+            "The longest time between two twins being born is 87 days.",
+            "A jellyfish is 95% water.",
+            "A lion's roar can be heard from five miles away.",
+            "A chameleon's tongue is twice the length of its body.",
+            "Dolphins sleep with one eye open."
+        ];
+function getRandomElement(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+        recognition.onstart = () => {
+            isListening = true; // Update listening state
+            outputDiv.innerHTML = "<p>Listening...</p>";
+            lastResponse = ""; // Reset last response
+        };
+
+        recognition.onresult = (event) => {
+            const command = event.results[0][0].transcript.toLowerCase();
+            outputDiv.innerHTML = `<p>You said: ${command}</p>`;
+            respondToCommand(command);
+        };
+
+        recognition.onend = () => {
+            if (isListening) {
+                recognition.start(); // Restart recognition only if it's listening
+            }
+        };
+
+        // Start listening when the button is clicked
+        startButton.addEventListener('click', () => {
+            if (!isListening) {
+                recognition.start();
+                outputDiv.innerHTML = "<p>Listening...</p>";
+            }
+        });
+
+        // Respond to commands
+        function respondToCommand(command) {
+            const synth = window.speechSynthesis;
+            let response = "";
+
+            // Check for commands
+            if (command.includes("hello")) {
+                response = "Hello! How can I assist you today?";
+            } else if (command.includes("your name")) {
+                response = "I am your personal assistant, Jarvis.";
+            } else if (command.includes("how are you")) {
+                response = "I am just a program, but thanks for asking!";
+            } else if (command.includes("time")) {
+                const date = new Date();
+                response = `Current time is ${date.getHours()}:${date.getMinutes()}`;
+            } else if (command.startsWith("open ")) {
+                const websiteName = command.substring(5);
+                response = `Opening ${websiteName}.`;
+                window.open(`https://${websiteName}.com`, "_blank");
+            } else if (command.includes("weather")) {
+                response = "Opening the weather page on Google.";
+                window.open("https://www.google.com/search?q=weather", "_blank"); // Open Google Weather
+            } else if (command.includes("set a reminder")) {
+                response = "Reminder set! But I can't actually save it yet.";
+            } else if (command.includes("joke")) {
+                response = getRandomElement(jokes);
+            } else if (command.includes("play music")) {
+                response = "Opening the NCS YouTube channel for you.";
+                window.open("https://www.youtube.com/c/NoCopyrightSounds", "_blank"); // Open NCS channel
+            } else if (command.includes("fact")) {
+                response = getRandomElement(fact);
+            } else if (command.includes("calculate")) {
+                const expression = command.replace("calculate ", "");
+                try {
+                    response = `The result is ${eval(expression)}`; // Use eval cautiously!
+                } catch (e) {
+                    response = "Sorry, I can't calculate that.";
+                }
+            } else if (command.includes("what is your purpose")) {
+                response = "My purpose is to assist you with your queries and tasks.";
+            } else if (command.includes("who created you")) {
+                response = "I was created by an awesome developer!";
+            } else {
+                return; // Simply return without doing anything for unrecognized commands
+            }
+
+            // Only respond if the response is different from the last response
+            if (response && response !== lastResponse) {
+                lastResponse = response; // Update last response to the current response
+                responseDiv.innerHTML = `<p>Jarvis: ${response}</p>`;
+                
+                // Speak the response
+                const utterance = new SpeechSynthesisUtterance(response);
+                utterance.onend = () => {
+                    recognition.start(); // Restart recognition after speaking
+                };
+                synth.speak(utterance);
+            }
+        }
+    </script>
+</body>
+</html> 
