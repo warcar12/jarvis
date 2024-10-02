@@ -45,6 +45,13 @@
             font-weight: bold;
             color: #007bff;
         }
+
+        video {
+            width: 300px;
+            height: auto;
+            margin-top: 20px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -53,21 +60,24 @@
         <button id="startRecognition">Start Listening</button>
         <div id="output"></div>
         <div id="response"></div>
+        <video id="video" autoplay></video> <!-- For camera feed -->
     </div>
     <script>
         const startButton = document.getElementById('startRecognition');
         const outputDiv = document.getElementById('output');
         const responseDiv = document.getElementById('response');
+        const videoElement = document.getElementById('video');
+        let voices = [];
 
         // Initialize Speech Recognition
         const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.interimResults = true; // Enable interim results
-        let isListening = false; // Track listening state
-        let lastResponse = ""; // Track last response to prevent repetition
-        let speaking = false; // Track if Jarvis is currently speaking
+        recognition.interimResults = true;
+        let isListening = false;
+        let lastResponse = "";
+        let expectingTimerInput = false; // Flag for timer input
 
-        // Arrays for unique jokes and interesting facts
-        const jokes = [
+        // Arrays for jokes and facts
+         const jokes = [
             "Why did the bicycle fall over? Because it was two-tired!",
             "Why don’t skeletons fight each other? They don’t have the guts.",
             "What do you call cheese that isn't yours? Nacho cheese!",
@@ -267,13 +277,14 @@
             "A chameleon's tongue is twice the length of its body.",
             "Dolphins sleep with one eye open."
         ];
-function getRandomElement(arr) {
+        function getRandomElement(arr) {
             return arr[Math.floor(Math.random() * arr.length)];
         }
+
         recognition.onstart = () => {
-            isListening = true; // Update listening state
+            isListening = true;
             outputDiv.innerHTML = "<p>Listening...</p>";
-            lastResponse = ""; // Reset last response
+            lastResponse = "";
         };
 
         recognition.onresult = (event) => {
@@ -284,11 +295,10 @@ function getRandomElement(arr) {
 
         recognition.onend = () => {
             if (isListening) {
-                recognition.start(); // Restart recognition only if it's listening
+                recognition.start();
             }
         };
 
-        // Start listening when the button is clicked
         startButton.addEventListener('click', () => {
             if (!isListening) {
                 recognition.start();
@@ -296,14 +306,39 @@ function getRandomElement(arr) {
             }
         });
 
+        // Load the voices when they're available
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+        }
+
+        // Call loadVoices when voices are loaded
+        speechSynthesis.onvoiceschanged = loadVoices;
+
         // Respond to commands
         function respondToCommand(command) {
             const synth = window.speechSynthesis;
             let response = "";
-               let voices = synth.getVoices();
-    let maleVoice = voices.find(voice => voice.name.includes("Male"));
-            // Check for commands
-            if (command.includes("hello")) {
+
+            if (command.includes("set a timer")) {
+                response = "How many minutes would you like to set the timer for?";
+                speak(response);
+                expectingTimerInput = true; // Set the flag to expect timer input
+                recognition.stop(); // Stop listening for this command
+            } else if (expectingTimerInput) {
+                const minutes = parseInt(command);
+                if (!isNaN(minutes)) {
+                    response = `Setting a timer for ${minutes} minutes.`;
+                    responseDiv.innerHTML = `<p>Jarvis: ${response}</p>`;
+                    speak(response);
+                    setTimer(minutes);
+                } else {
+                    response = "Please say a valid number.";
+                    responseDiv.innerHTML = `<p>Jarvis: ${response}</p>`;
+                    speak(response);
+                }
+                expectingTimerInput = false; // Reset the flag
+                recognition.start(); // Restart recognition
+            } else if (command.includes("hello")) {
                 response = "Hello! How can I assist you today?";
             } else if (command.includes("your name")) {
                 response = "I am your personal assistant, Jarvis.";
@@ -312,50 +347,95 @@ function getRandomElement(arr) {
             } else if (command.includes("time")) {
                 const date = new Date();
                 response = `Current time is ${date.getHours()}:${date.getMinutes()}`;
-            } else if (command.startsWith("open ")) {
-                const websiteName = command.substring(5);
-                response = `Opening ${websiteName}.`;
-                window.open(`https://${websiteName}.com`, "_blank");
-            } else if (command.includes("weather")) {
-                response = "Opening the weather page on Google.";
-                window.open("https://www.google.com/search?q=weather", "_blank"); // Open Google Weather
-            } else if (command.includes("set a reminder")) {
-                response = "Reminder set! But I can't actually save it yet.";
-            } else if (command.includes("joke")) {
-                response = getRandomElement(jokes);
-            } else if (command.includes("play music")) {
-                response = "Opening the NCS YouTube channel for you.";
-                window.open("https://www.youtube.com/c/NoCopyrightSounds", "_blank"); // Open NCS channel
-            } else if (command.includes("fact")) {
-                response = getRandomElement(fact);
-            } else if (command.includes("calculate")) {
+            }else if (command.includes("calculate")) {
                 const expression = command.replace("calculate ", "");
                 try {
                     response = `The result is ${eval(expression)}`; // Use eval cautiously!
                 } catch (e) {
                     response = "Sorry, I can't calculate that.";
                 }
-            } else if (command.includes("what is your purpose")) {
-                response = "My purpose is to assist you with your queries and tasks.";
-            } else if (command.includes("who created you")) {
-                response = "I was created by an awesome developer!";
+            } else if (command.includes("open ")) {
+                const websiteName = command.substring(5);
+                response = `Opening ${websiteName}.`;
+                window.open(`https://${websiteName}.com`, "_blank");
+            } else if (command.includes("weather")) {
+                response = "Opening the weather page on Google.";
+                window.open("https://www.google.com/search?q=weather", "_blank");
+            } else if (command.includes("joke")) {
+                response = getRandomElement(jokes);
+            } else if (command.includes("play music")) {
+                response = "Opening the NCS YouTube channel.";
+                window.open("https://www.youtube.com/c/NoCopyrightSounds", "_blank");
+            } else if (command.includes("fact")) {
+                response = getRandomElement(facts);
+            } else if (command.includes("turn on camera")) {
+                response = "Turning on the camera.";
+                startCamera();
+            } else if (command.includes("turn off camera")) {
+                response = "Turning off the camera.";
+                stopCamera();
+            } else if (command.includes("flashlight")) {
+                response = "Flashlight control is not supported in browsers.";
             } else {
-                return; // Simply return without doing anything for unrecognized commands
+                return;
             }
 
-            // Only respond if the response is different from the last response
             if (response && response !== lastResponse) {
-                lastResponse = response; // Update last response to the current response
+                lastResponse = response;
                 responseDiv.innerHTML = `<p>Jarvis: ${response}</p>`;
-                
-                // Speak the response
-                const utterance = new SpeechSynthesisUtterance(response);
-                utterance.onend = () => {
-                    recognition.start(); // Restart recognition after speaking
-                };
-                synth.speak(utterance);
+                speak(response); // Use the updated speak function
+            }
+        }
+
+        function setTimer(minutes) {
+            const milliseconds = minutes * 60 * 1000;
+            setTimeout(() => {
+                const response = `Timer for ${minutes} minutes is complete!`;
+                responseDiv.innerHTML = `<p>Jarvis: ${response}</p>`;
+                speak(response);
+            }, milliseconds);
+        }
+
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.onend = () => {
+                recognition.start(); // Restart recognition after speaking
+            };
+
+            // Attempt to set the voice to Google UK English Male
+            const selectedVoiceName = "Google UK English Male"; // Desired voice
+            const selectedVoice = voices.find(voice => voice.name === selectedVoiceName);
+            
+            if (selectedVoice) {
+                utterance.voice = selectedVoice; // Set to the specific voice
+            }
+
+            speechSynthesis.speak(utterance);
+        }
+
+        function startCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    videoElement.style.display = "block";
+                    videoElement.srcObject = stream;
+                })
+                .catch((err) => {
+                    console.error("Camera access error: ", err);
+                });
+            } else {
+                alert("Camera not supported by this browser.");
+            }
+        }
+
+        function stopCamera() {
+            const stream = videoElement.srcObject;
+            if (stream) {
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+                videoElement.style.display = "none";
             }
         }
     </script>
 </body>
-</html> 
+</html>
