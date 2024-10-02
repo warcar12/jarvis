@@ -300,7 +300,8 @@ function getRandomElement(arr) {
         function respondToCommand(command) {
             const synth = window.speechSynthesis;
             let response = "";
-
+               let voices = synth.getVoices();
+    let maleVoice = voices.find(voice => voice.name.includes("Male"));
             // Check for commands
             if (command.includes("hello")) {
                 response = "Hello! How can I assist you today?";
