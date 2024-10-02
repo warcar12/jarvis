@@ -368,9 +368,7 @@ startButton.addEventListener('click', () => {
             } else if (command.includes("open ")) {
                 const websiteName = command.substring(5);
                 response = `Opening ${websiteName}.`;
-                setTimeout(() => {
             window.open(`https://${websiteName}.com`, "_blank");
-        }, 1000);
             } else if (command.includes("weather")) {
                 response = "Opening the weather page on Google.";
                 window.open("https://www.google.com/search?q=weather", "_blank");
