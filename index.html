@@ -352,7 +352,7 @@
                 try {
                     response = `The result is ${eval(expression)}`; // Use eval cautiously!
                 } catch (e) {
-                    response = "Sorry, I can't calculate that.";
+                    response = "";
                 }
             } else if (command.includes("open ")) {
                 const websiteName = command.substring(5);
