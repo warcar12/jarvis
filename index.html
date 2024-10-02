@@ -330,7 +330,15 @@ startButton.addEventListener('click', () => {
             const synth = window.speechSynthesis;
             let response = "";
 
-            if (command.includes("set a timer")) {
+           if (command.startsWith("jarvis say")) {
+        // Extract the text after "Jarvis say"
+        const textToSay = command.replace("jarvis say", "").trim();
+        if (textToSay) {
+            response = textToSay; // Make Jarvis say the extracted text
+        } else {
+            response = "I didn't hear what you wanted me to say.";
+        }
+    }else if (command.includes("set a timer")) {
                 response = "How many minutes would you like to set the timer for?";
                 speak(response);
                 expectingTimerInput = true; // Set the flag to expect timer input
